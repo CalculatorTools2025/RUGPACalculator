@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<!--
+  © 2025 Calculator Tools. All rights reserved.
+  Rutgers GPA Calculator — Created by Current RBS Student
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rutgers GPA Calculator</title>
+  <style>
+    :root {
+      --bg-color: #e9ecef;
+      --text-color: #000;
+      --container-bg: #f8f9fa;
+      --input-bg: #f0f0f0;
+    }
+    body.dark-mode {
+      --bg-color: #121212;
+      --text-color: #f0f0f0;
+      --container-bg: #1e1e1e;
+      --input-bg: #2c2c2c;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #cc0033;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: var(--container-bg);
+    }
+    select.grade, select.credits, select.term, select.year {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+      background-color: var(--input-bg);
+      border: 1px solid #aaa;
+      border-radius: 20px;
+      color: var(--text-color);
+      appearance: none;
+    }
+    select.term, select.year {
+      width: 120px;
+    }
+    button {
+      background-color: #b31b1b;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px 10px 0 0;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 10px;
+    }
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      color: #000;
+      font-size: 18px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    body.dark-mode .result {
+      background-color: #2a2a2a;
+      border-color: #444;
+      color: #ddd;
+    }
+    .result p {
+      margin: 10px 0;
+      font-weight: 500;
+    }
+    .result p strong {
+      color: #000;
+    }
+    .semester {
+      border: 1px solid #eee;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .semester-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .semester-header h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      flex-grow: 1;
+    }
+    .term-year-selects {
+      display: flex;
+      gap: 10px;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: #6c757d;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Rutgers GPA Calculator</h1>
+  </header>
+  <div class="container">
+    <div id="semesters"></div>
+    <button onclick="addSemester()">Add Another Semester</button>
+    <button onclick="calculateCumulativeGPA()">Calculate Cumulative GPA</button>
+    <div id="gpaResult"></div>
+    <div class="actions">
+      <button onclick="toggleDarkMode()">Toggle Light/Dark Mode</button>
+      <button onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    <em>
+      © 2025 Calculator Tools. All rights reserved.<br>
+      Rutgers GPA Calculator — Created by Current RBS Student<br>
+      Notice an error or bug? Please report issues to
+      <a href="mailto:calculatortools2025@gmail.com" style="color: inherit; text-decoration: underline;">calculatortools2025@gmail.com</a>
+    </em>
+  </p>
+
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+    }
+
+    function generateYearOptions(start = 2018) {
+      const currentYear = new Date().getFullYear() + 5;
+      let options = '';
+      for (let year = start; year <= currentYear; year++) {
+        options += `<option value="${year}">${year}</option>`;
+      }
+      return options;
+    }
+
+    function getSemesterLabel(term, year) {
+      return term && year ? `${term} ${year}` : "";
+    }
+
+    function updateSemesterHeader(semesterDiv) {
+      const termSelect = semesterDiv.querySelector('.term');
+      const yearSelect = semesterDiv.querySelector('.year');
+      const header = semesterDiv.querySelector('.semester-label');
+
+      function updateLabel() {
+        const label = getSemesterLabel(termSelect.value, yearSelect.value);
+        header.textContent = `Semester${label ? " " + label : ""}`;
+      }
+
+      termSelect.addEventListener('change', updateLabel);
+      yearSelect.addEventListener('change', updateLabel);
+      updateLabel();
+    }
+
+    function addCourse(button) {
+      const courseDiv = document.createElement('div');
+      courseDiv.classList.add('course');
+      courseDiv.innerHTML = `
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1 1 45%;">
+            <label>Grade</label>
+            <select class="grade">
+              <option value="4.0">A</option>
+              <option value="3.5">B+</option>
+              <option value="3.0">B</option>
+              <option value="2.5">C+</option>
+              <option value="2.0">C</option>
+              <option value="1.0">D</option>
+              <option value="0.0">F</option>
+            </select>
+          </div>
+          <div style="flex: 1 1 45%;">
+            <label>Credits</label>
+            <select class="credits">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+          <button onclick="this.parentElement.remove()">Remove Course</button>
+        </div>
+      `;
+      button.previousElementSibling.appendChild(courseDiv);
+    }
+
+    function addSemester() {
+      const semesters = document.getElementById('semesters');
+      const semesterDiv = document.createElement('div');
+      semesterDiv.classList.add('semester');
+      semesterDiv.innerHTML = `
+        <div class="semester-header">
+          <h3 class="semester-label">Semester</h3>
+          <div class="term-year-selects">
+            <select class="term">
+              <option value="" disabled selected>Term</option>
+              <option value="Spring">Spring</option>
+              <option value="Summer">Summer</option>
+              <option value="Fall">Fall</option>
+              <option value="Winter">Winter</option>
+            </select>
+            <select class="year">
+              <option value="" disabled selected>Year</option>
+              ${generateYearOptions()}
+            </select>
+          </div>
+        </div>
+        <div class="courses">
+          <div class="course" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1 1 45%;">
+              <label>Grade</label>
+              <select class="grade">
+                <option value="4.0">A</option>
+                <option value="3.5">B+</option>
+                <option value="3.0">B</option>
+                <option value="2.5">C+</option>
+                <option value="2.0">C</option>
+                <option value="1.0">D</option>
+                <option value="0.0">F</option>
+              </select>
+            </div>
+            <div style="flex: 1 1 45%;">
+              <label>Credits</label>
+              <select class="credits">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <button onclick="addCourse(this)">Add Course</button>
+        <button onclick="this.parentElement.remove()">Remove Semester</button>
+      `;
+      semesters.appendChild(semesterDiv);
+      updateSemesterHeader(semesterDiv);
+    }
+
+    function calculateCumulativeGPA() {
+      const termOrder = { "Spring": 1, "Summer": 2, "Fall": 3, "Winter": 4 };
+      const semesterDivs = Array.from(document.querySelectorAll('.semester'));
+
+      semesterDivs.sort((a, b) => {
+        const termA = a.querySelector('.term').value;
+        const yearA = parseInt(a.querySelector('.year').value) || 0;
+        const termB = b.querySelector('.term').value;
+        const yearB = parseInt(b.querySelector('.year').value) || 0;
+
+        const orderA = termOrder[termA] || 99;
+        const orderB = termOrder[termB] || 99;
+
+        return yearA - yearB || orderA - orderB;
+      });
+
+      let totalPoints = 0;
+      let totalCredits = 0;
+      let resultHTML = '';
+
+      semesterDivs.forEach(semester => {
+        const grades = semester.querySelectorAll('.grade');
+        const credits = semester.querySelectorAll('.credits');
+        const term = semester.querySelector('.term').value;
+        const year = semester.querySelector('.year').value;
+        const label = getSemesterLabel(term, year);
+
+        let semPoints = 0;
+        let semCredits = 0;
+
+        for (let i = 0; i < grades.length; i++) {
+          const grade = parseFloat(grades[i].value);
+          const credit = parseFloat(credits[i].value);
+          if (!isNaN(grade) && !isNaN(credit)) {
+            semPoints += grade * credit;
+            semCredits += credit;
+          }
+        }
+
+        const semesterGPA = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : '0.00';
+        resultHTML += `<p>${label || "Semester"}: GPA ${semesterGPA}</p>`;
+        totalPoints += semPoints;
+        totalCredits += semCredits;
+      });
+
+      const cumulativeGPA = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+      resultHTML += `<p><strong>Cumulative GPA: ${cumulativeGPA}</strong></p>`;
+
+      const gpaResult = document.getElementById('gpaResult');
+      gpaResult.className = 'result';
+      gpaResult.innerHTML = resultHTML;
+    }
+
+    window.onload = () => {
+      addSemester();
+    };
+  </script>
+</body>
+</html>
